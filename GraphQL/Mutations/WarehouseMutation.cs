@@ -9,7 +9,6 @@ using System.Text;
 
 namespace EnterpriseGradeInventoryAPI.GraphQL.Mutations
 {
-  [ExtendObjectType(typeof(Mutation))]
   public class WarehouseMutation
   {
     public class AddWarehouseInput

@@ -10,7 +10,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace EnterpriseGradeInventoryAPI.GraphQL.Mutations
 {
-  [ExtendObjectType(typeof(Mutation))]
   public class StorageLocationMutation
   {
     public class AddStorageLocationInput

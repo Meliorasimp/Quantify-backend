@@ -1,6 +1,3 @@
-using EnterpriseGradeInventoryAPI.Data;
-using EnterpriseGradeInventoryAPI.Models;
-
 namespace EnterpriseGradeInventoryAPI.Models
 {
   public class StorageLocation
