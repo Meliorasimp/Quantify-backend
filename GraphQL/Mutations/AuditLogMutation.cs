@@ -7,7 +7,7 @@ namespace EnterpriseGradeInventoryAPI.GraphQL.Mutations
 {
   public class AuditLogMutation
   {
-    public async Task<AuditLog> createAuditLog(
+    public async Task<AuditLog> CreateAuditLog(
       [Service] ApplicationDbContext context, 
       string action, int userId, string tablename, int RecordId, int? oldValue, int? newValue)
     {

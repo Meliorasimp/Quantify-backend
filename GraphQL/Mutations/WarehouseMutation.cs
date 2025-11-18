@@ -6,22 +6,14 @@ using System.Security.Claims;
 using System.IdentityModel.Tokens.Jwt;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using EnterpriseGradeInventoryAPI.DTO.Input;
+using EnterpriseGradeInventoryAPI.DTO.Output;
 
 namespace EnterpriseGradeInventoryAPI.GraphQL.Mutations
 {
   public class WarehouseMutation
   {
-    public class AddWarehouseInput
-    {
-      public string WarehouseName { get; set; } = string.Empty;
-      public string WarehouseCode { get; set; } = string.Empty;
-      public string Address { get; set; } = string.Empty;
-      public string Manager { get; set; } = string.Empty;
-      public string ContactEmail { get; set; } = string.Empty;
-      public string Region { get; set; } = string.Empty;
-      public string Status { get; set; } = string.Empty;
-    }
-
+    
     public async Task<WarehousePayload> addWarehouse(
         [Service] ApplicationDbContext context, 
         List<AddWarehouseInput> input,
@@ -49,11 +41,8 @@ namespace EnterpriseGradeInventoryAPI.GraphQL.Mutations
             Region = item.Region,
             Status = item.Status,
             CreatedAt = DateTime.UtcNow,
-            CreatedByUserId = user.Id, // Keep the user ID for reference
+            CreatedByUserId = user.Id,
             CreatedByLastName = user.LastName,
-            // Note: 
-            // If you add CreatedByLastName property to Warehouse model, you can use:
-            // CreatedByLastName = user.LastName
           };
           context.Warehouses.Add(newWarehouse);
           await context.SaveChangesAsync();
@@ -133,13 +122,6 @@ namespace EnterpriseGradeInventoryAPI.GraphQL.Mutations
         Console.WriteLine($"DEBUG: Token validation failed: {ex.Message}");
         return null;
       }
-    }
-
-    public class WarehousePayload
-    {
-      public int Id { get; set; }
-      public string Name { get; set; } = string.Empty;
-      public string Location { get; set; } = string.Empty;
     }
   }
 }

@@ -1,34 +1,25 @@
 using EnterpriseGradeInventoryAPI.Data;
 using EnterpriseGradeInventoryAPI.Models;
 using HotChocolate;
+using HotChocolate.Authorization;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
+using EnterpriseGradeInventoryAPI.DTO.Input;
+using EnterpriseGradeInventoryAPI.DTO.Output;
+
 
 namespace EnterpriseGradeInventoryAPI.GraphQL.Mutations
 {
-  //Input type for GraphQL mutations
-  public class InventoryInput
-  {
-    public string ItemSKU { get; set; } = string.Empty;
-    public string ProductName { get; set; } = string.Empty;
-    public string Category { get; set; } = string.Empty;
-    public string WarehouseLocation { get; set; } = string.Empty;
-    public string RackLocation { get; set; } = string.Empty;
-    public int QuantityInStock { get; set; }
-    public int ReorderLevel { get; set; }
-    public string UnitOfMeasure { get; set; } = string.Empty;
-    public int CostPerUnit { get; set; }
-    public int TotalValue { get; set; }
-  }
-
+  [Authorize] 
   public class InventoryMutation
   {
     //Add Inventory to the Database
-    public async Task<InventoryPayload> addInventory([Service] ApplicationDbContext context, string userId, List<InventoryInput> inventory)
+    public async Task<InventoryPayload> addInventory([Service] ApplicationDbContext context, ClaimsPrincipal user, List<InventoryInput> inventory)
     {
       try
       {
         // Validate userId format
-        if (!int.TryParse(userId, out int userIdInt))
+        if (!int.TryParse(user.FindFirst(ClaimTypes.NameIdentifier)?.Value, out int userIdInt))
         {
           throw new GraphQLException("Invalid user ID format");
         }
@@ -110,20 +101,6 @@ namespace EnterpriseGradeInventoryAPI.GraphQL.Mutations
         // Handle exceptions
         throw new GraphQLException("Error adding inventory", ex);
       }
-    }
-
-    //Return type for GraphQL response OwO
-    public class InventoryPayload
-    {
-      [GraphQLName("id")]
-      public int Id { get; set; }
-      [GraphQLName("itemName")]
-      public string ItemName { get; set; } = string.Empty;
-      [GraphQLName("quantity")]
-      public int Quantity { get; set; }
-      [GraphQLName("userId")]
-      public int UserId { get; set; }
-
     }
   }
 }
