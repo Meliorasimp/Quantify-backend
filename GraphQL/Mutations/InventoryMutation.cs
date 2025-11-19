@@ -102,5 +102,32 @@ namespace EnterpriseGradeInventoryAPI.GraphQL.Mutations
         throw new GraphQLException("Error adding inventory", ex);
       }
     }
+
+    public async Task<DeletedInventoryPayload> DeleteInventory([Service] ApplicationDbContext context, ClaimsPrincipal user, int inventoryId)
+    {
+      if(!int.TryParse(user.FindFirst(ClaimTypes.NameIdentifier)?.Value, out int userIdInt))
+      {
+        throw new GraphQLException("Invalid user ID format");
+      }
+
+      if(inventoryId <= 0)
+      {
+        throw new GraphQLException("Invalid inventory ID");
+      }
+
+      var item = await context.Inventories.FindAsync(inventoryId);
+      if(item == null || item.UserId != userIdInt)
+      {
+        throw new GraphQLException("Inventory item not found or access denied");
+      }
+      
+      context.Inventories.Remove(item);
+      await context.SaveChangesAsync();
+      return new DeletedInventoryPayload
+      {
+        Id = item.Id,
+        ItemSKU = item.ItemSKU
+      };
+    }
   }
 }

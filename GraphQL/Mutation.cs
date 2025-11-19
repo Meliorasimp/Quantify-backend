@@ -18,6 +18,9 @@ namespace EnterpriseGradeInventoryAPI.GraphQL
       descriptor.Field<InventoryMutation>(t => t.addInventory(default!, default!, default!))
         .Name("addInventory")
         .Description("Add a new Inventory Item");
+      descriptor.Field<InventoryMutation>(t => t.DeleteInventory(default!, default!, default!))
+        .Name("deleteInventory")
+        .Description("Delete an Inventory Item");
       descriptor.Field<WarehouseMutation>(t => t.addWarehouse(default!, default!, default!))
         .Name("addWarehouse")
         .Description("Add a new Warehouse");

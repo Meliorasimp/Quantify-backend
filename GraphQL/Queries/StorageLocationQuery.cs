@@ -206,5 +206,29 @@ namespace EnterpriseGradeInventoryAPI.GraphQL.Queries
           sl.LocationCode.ToLower().Contains(keyword) ||
           sl.Warehouse != null && sl.Warehouse.WarehouseName.ToLower().Contains(keyword));
     }
+
+    public IQueryable<StorageLocation> GetStorageLocationByOrder([Service] ApplicationDbContext context, string orderBy)
+    {
+      if(orderBy.ToLower() == "utilization")
+      {
+        var query = context.StorageLocations
+          .Include(sl => sl.Warehouse)
+          .Include(sl => sl.User)
+          .OrderByDescending(sl => (double)sl.OccupiedCapacity / sl.MaxCapacity);
+        return query;
+      }
+      if(orderBy.ToLower() == "capacity")
+      {
+        var query = context.StorageLocations
+          .Include(sl => sl.Warehouse)
+          .Include(sl => sl.User)
+          .OrderByDescending(sl => sl.MaxCapacity);
+        return query;
+      }
+      else
+      {
+        throw new GraphQLException("Invalid orderBy parameter. Use 'utilization' or 'capacity'.");
+      }
+    }
   }
 }
