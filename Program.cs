@@ -18,10 +18,21 @@ var builder = WebApplication.CreateBuilder(args);
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
-// Configure Redis
-var redisConnection = builder.Configuration["Redis:ConnectionString"] ?? "localhost:6379";
-var redis = ConnectionMultiplexer.Connect(redisConnection);
-builder.Services.AddSingleton<IConnectionMultiplexer>(redis);
+// Configure Redis (optional)
+var redisConnection = builder.Configuration["Redis:ConnectionString"];
+if (!string.IsNullOrEmpty(redisConnection))
+{
+    try
+    {
+        var redis = ConnectionMultiplexer.Connect(redisConnection);
+        builder.Services.AddSingleton<IConnectionMultiplexer>(redis);
+    }
+    catch (Exception ex)
+    {
+        // Log warning but don't crash if Redis is unavailable
+        Console.WriteLine($"Warning: Could not connect to Redis: {ex.Message}");
+    }
+}
 
 // Enable CORS for the client app
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() 
