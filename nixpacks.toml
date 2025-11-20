@@ -3,8 +3,8 @@ nixPkgs = ["dotnet-sdk_9"]
 
 [phases.build]
 cmds = [
-  "dotnet restore ./EnterpriseGradeInventoryAPI.csproj",
-  "dotnet publish ./EnterpriseGradeInventoryAPI.csproj -c Release -o out"
+  "dotnet restore EnterpriseGradeInventoryAPI.csproj",
+  "dotnet publish EnterpriseGradeInventoryAPI.csproj -c Release -o out --no-restore"
 ]
 
 [phases.start]
