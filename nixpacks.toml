@@ -1,5 +1,14 @@
+[phases.setup]
+nixPkgs = ["dotnet-sdk_9"]
+
 [phases.build]
-cmds = ["dotnet publish ./EnterpriseGradeInventoryAPI.csproj --no-restore -c Release -o out"]
+cmds = [
+  "dotnet restore ./EnterpriseGradeInventoryAPI.csproj",
+  "dotnet publish ./EnterpriseGradeInventoryAPI.csproj -c Release -o out"
+]
 
 [phases.start]
 cmd = "dotnet out/EnterpriseGradeInventoryAPI.dll"
+
+[variables]
+ASPNETCORE_URLS = "http://0.0.0.0:${PORT}"
