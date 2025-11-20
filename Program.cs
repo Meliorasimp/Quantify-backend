@@ -101,25 +101,26 @@ if (!app.Environment.IsDevelopment())
         {
             var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
             
-            // Ensure database can connect, but don't auto-migrate if tables exist
+            Console.WriteLine("Checking database connection...");
             if (db.Database.CanConnect())
             {
-                var pendingMigrations = db.Database.GetPendingMigrations();
-                if (pendingMigrations.Any())
-                {
-                    Console.WriteLine("Applying pending migrations...");
-                    db.Database.Migrate();
-                }
-                else
-                {
-                    Console.WriteLine("Database is up to date.");
-                }
+                Console.WriteLine("Database connected successfully.");
+                
+                // Always try to migrate - EF Core will handle if already applied
+                Console.WriteLine("Running migrations...");
+                db.Database.Migrate();
+                Console.WriteLine("Migrations completed successfully.");
+            }
+            else
+            {
+                Console.WriteLine("Cannot connect to database.");
             }
         }
     }
     catch (Exception ex)
     {
-        Console.WriteLine($"Migration warning: {ex.Message}");
+        Console.WriteLine($"Migration error: {ex.Message}");
+        Console.WriteLine($"Stack trace: {ex.StackTrace}");
         // Continue startup even if migration fails
     }
 }
