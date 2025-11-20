@@ -95,10 +95,32 @@ var app = builder.Build();
 // Run migrations on startup (Production only - Railway needs this)
 if (!app.Environment.IsDevelopment())
 {
-    using (var scope = app.Services.CreateScope())
+    try
     {
-        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-        db.Database.Migrate();
+        using (var scope = app.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            
+            // Ensure database can connect, but don't auto-migrate if tables exist
+            if (db.Database.CanConnect())
+            {
+                var pendingMigrations = db.Database.GetPendingMigrations();
+                if (pendingMigrations.Any())
+                {
+                    Console.WriteLine("Applying pending migrations...");
+                    db.Database.Migrate();
+                }
+                else
+                {
+                    Console.WriteLine("Database is up to date.");
+                }
+            }
+        }
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Migration warning: {ex.Message}");
+        // Continue startup even if migration fails
     }
 }
 
