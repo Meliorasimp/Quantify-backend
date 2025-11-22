@@ -1,29 +1,17 @@
-using EnterpriseGradeInventoryAPI.Data;
 using EnterpriseGradeInventoryAPI.Models;
-using HotChocolate;
-using Microsoft.EntityFrameworkCore;
+using EnterpriseGradeInventoryAPI;
 
-namespace EnterpriseGradeInventoryAPI.GraphQL.Mutations
+public class AuditLogMutation
 {
-  public class AuditLogMutation
-  {
-    public async Task<AuditLog> CreateAuditLog(
-      [Service] ApplicationDbContext context, 
-      string action, int userId, string tablename, int RecordId, int? oldValue, int? newValue)
+  public async Task<AuditLog> CreateAuditLogMutation(
+    [Service] AuditLogService auditLogService,
+    string action,
+    int userId,
+    string tableName,
+    int recordId,
+    int? oldValue,
+    int? newValue)
     {
-      var log = new AuditLog
-      {
-        Action = action,
-        Tablename = tablename,
-        Timestamp = DateTime.UtcNow,
-        RecordId = RecordId,
-        OldValue = oldValue,
-        NewValue = newValue,
-        UserId = userId
-      };
-      context.AuditLogs.Add(log);
-      await context.SaveChangesAsync();
-      return log;
+        return await auditLogService.CreateAuditLog(action, userId, tableName, recordId, oldValue, newValue);
     }
-  }
 }

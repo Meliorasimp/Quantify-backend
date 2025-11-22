@@ -5,6 +5,10 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using System.Text;
 using Npgsql.EntityFrameworkCore.PostgreSQL;
+using EnterpriseGradeInventoryAPI.GraphQL.Mutations;
+using EnterpriseGradeInventoryAPI.Models;
+using EnterpriseGradeInventoryAPI;
+using OfficeOpenXml;
 
 // Load .env file only in development
 if (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development")
@@ -22,6 +26,14 @@ builder.Services.AddOpenApi();
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() 
     ?? new[] { "http://localhost:5173", "https://localhost:5173" };
 
+// Get API Base URL from configuration
+var apiBaseUrl = builder.Configuration["ApiSettings:BaseUrl"] ?? "http://localhost:5064";
+
+builder.Services.AddHttpClient("MyApi", client =>
+{
+  client.BaseAddress = new Uri(apiBaseUrl);
+});
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowClient",
@@ -35,7 +47,7 @@ builder.Services.AddCors(options =>
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddHttpContextAccessor();
-
+builder.Services.AddScoped<AuditLogService>();
 // Use SQL Server for Development, PostgreSQL for Production
 if (builder.Environment.IsDevelopment())
 {
@@ -89,8 +101,13 @@ builder.Services
     .AddMutationType<EnterpriseGradeInventoryAPI.GraphQL.Mutation>()
     .AddAuthorization();
     
-
 var app = builder.Build();
+
+Console.WriteLine("Running in environment: " + builder.Environment.EnvironmentName);
+Console.WriteLine("DB Connection: " + builder.Configuration.GetConnectionString("DefaultConnection"));
+Console.WriteLine("API Base URL: " + builder.Configuration["ApiSettings:BaseUrl"]);
+
+
 
 // Run migrations on startup (Production only - Railway needs this)
 if (!app.Environment.IsDevelopment())
@@ -141,5 +158,5 @@ app.UseAuthorization();
 
 // Map GraphQL endpoint
 app.MapGraphQL("/graphql");
-
+app.MapControllers();
 app.Run();

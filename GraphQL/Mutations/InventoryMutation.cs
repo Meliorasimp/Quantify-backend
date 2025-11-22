@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using EnterpriseGradeInventoryAPI.DTO.Input;
 using EnterpriseGradeInventoryAPI.DTO.Output;
+using EnterpriseGradeInventoryAPI.GraphQL.Mutations;
 
 
 namespace EnterpriseGradeInventoryAPI.GraphQL.Mutations
@@ -13,6 +14,13 @@ namespace EnterpriseGradeInventoryAPI.GraphQL.Mutations
   [Authorize] 
   public class InventoryMutation
   {
+    private readonly AuditLogService _auditService;
+
+    public InventoryMutation(AuditLogService auditService)
+    {
+      _auditService = auditService;
+    }
+
     //Add Inventory to the Database
     public async Task<InventoryPayload> addInventory([Service] ApplicationDbContext context, ClaimsPrincipal user, List<InventoryInput> inventory)
     {
@@ -75,12 +83,19 @@ namespace EnterpriseGradeInventoryAPI.GraphQL.Mutations
             newInventory.StorageLocationId = storageLocation.Id;
             storageLocation.OccupiedCapacity += item.QuantityInStock;
           }
-          
-          context.Inventories.Add(newInventory);
-        }
         
-        //Save changes to MySQL Database
-        await context.SaveChangesAsync();
+
+          context.Inventories.Add(newInventory);
+          await context.SaveChangesAsync();
+          await _auditService.CreateAuditLog(
+              "Add",       
+              userIdInt,    
+              "Inventories",    
+              newInventory.Id,  
+              null,     
+              newInventory.QuantityInStock
+          );
+        }
         
         // Get the last added inventory for response
         var lastInventory = await context.Inventories
@@ -99,6 +114,7 @@ namespace EnterpriseGradeInventoryAPI.GraphQL.Mutations
       catch (Exception ex)
       {
         // Handle exceptions
+        Console.WriteLine(ex.Message);
         throw new GraphQLException("Error adding inventory", ex);
       }
     }
@@ -138,6 +154,7 @@ namespace EnterpriseGradeInventoryAPI.GraphQL.Mutations
       
       context.Inventories.Remove(item);
       await context.SaveChangesAsync();
+      
       return new DeletedInventoryPayload
       {
         Id = item.Id,
@@ -199,6 +216,12 @@ namespace EnterpriseGradeInventoryAPI.GraphQL.Mutations
       }
 
       await context.SaveChangesAsync();
+      await _auditService.CreateAuditLog(
+          "Update",       
+          userIdInt,    
+          "Inventories",    
+          item.Id
+      );
 
       return new UpdatedInventoryPayload
       {

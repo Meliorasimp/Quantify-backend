@@ -30,9 +30,6 @@ namespace EnterpriseGradeInventoryAPI.GraphQL
       descriptor.Field<StorageLocationMutation>(t => t.addStorageLocation(default!,default!, default!))
         .Name("addStorageLocation")
         .Description("Add a new Storage Location");
-      descriptor.Field<AuditLogMutation>(t => t.CreateAuditLog(default!, default!, default!, default!, default!, default!, default!))
-        .Name("createAuditLog")
-        .Description("Create a new Audit Log entry");
     }
   }
 }
