@@ -18,6 +18,7 @@ namespace EnterpriseGradeInventoryAPI.GraphQL.Mutations
   {
     public async Task<StorageLocationPayload> addStorageLocation(
         [Service] ApplicationDbContext context, 
+        [Service] AuditLogService auditService,
         List<AddStorageLocationInput> storageLocation,
         ClaimsPrincipal user)
     {
@@ -25,15 +26,10 @@ namespace EnterpriseGradeInventoryAPI.GraphQL.Mutations
       {
         
         if (user == null)
-        {
           throw new GraphQLException(new Error("User must be authenticated", "UNAUTHORIZED"));
-        }
 
         if(!int.TryParse(user.FindFirst(ClaimTypes.NameIdentifier)?.Value, out int userIdInt))
-        {
           throw new GraphQLException(new Error("Invalid user ID format", "INVALID_USER_ID"));
-        }
-        
 
         foreach (var item in storageLocation)
         {
@@ -41,9 +37,7 @@ namespace EnterpriseGradeInventoryAPI.GraphQL.Mutations
           var warehouse = await context.Warehouses.FindAsync(item.WarehouseId);
               
           if (warehouse == null)
-          {
             throw new GraphQLException(new Error($"Warehouse with ID {item.WarehouseId} not found", "WAREHOUSE_NOT_FOUND"));
-          }
 
           var newStorageLocation = new StorageLocation
           {
@@ -54,10 +48,19 @@ namespace EnterpriseGradeInventoryAPI.GraphQL.Mutations
             UnitType = item.UnitType,
             WarehouseId = item.WarehouseId,
             CreatedAt = DateTime.UtcNow,
-            UserId = userIdInt
-            
+            UserId = userIdInt    
           };
+
           context.StorageLocations.Add(newStorageLocation);
+          await context.SaveChangesAsync();
+          await auditService.CreateAuditLog(
+            "Create", 
+            userIdInt, 
+            "StorageLocations", 
+            newStorageLocation.Id, 
+            null, 
+            null
+          );
           await context.SaveChangesAsync();
         }
         
@@ -76,6 +79,47 @@ namespace EnterpriseGradeInventoryAPI.GraphQL.Mutations
       {
         throw new GraphQLException(new Error("Failed to add storage location(s): " + ex.Message, "STORAGE_LOCATION_ADD_ERROR"));
       }
+    }
+    public async Task<DeletedStorageLocationPayload> DeleteStorageLocation(
+      [Service] ApplicationDbContext context,
+      [Service] AuditLogService auditService,
+      ClaimsPrincipal user,
+      int id
+    )
+    {
+      if(!int.TryParse(user.FindFirst(ClaimTypes.NameIdentifier)?.Value, out int userIdInt))
+        throw new GraphQLException("Invalid user ID format");
+
+      var storageLocation = await context.StorageLocations.FindAsync(id);
+
+      // Check if storage location exists then delete if it does.
+      if(storageLocation == null)
+        throw new GraphQLException($"Storage Location with ID {id} not found");
+      context.StorageLocations.Remove(storageLocation);
+
+      var inventoryItem = await context.Inventories.FirstOrDefaultAsync(i => i.StorageLocationId == id);
+      
+      // Remove associated inventory item if it exists
+      if(inventoryItem != null)
+        context.Inventories.Remove(inventoryItem);
+
+      await context.SaveChangesAsync();
+
+      await auditService.CreateAuditLog(
+        "Delete",
+        userIdInt,
+        "StorageLocations",
+        storageLocation.Id,
+        null,
+        null
+      );
+      await context.SaveChangesAsync();
+
+      return new DeletedStorageLocationPayload
+      {
+        Id = storageLocation.Id,
+        LocationCode = storageLocation.LocationCode
+      };
     }
   }
 }

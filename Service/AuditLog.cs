@@ -30,10 +30,8 @@ namespace EnterpriseGradeInventoryAPI
           UserId = userId,
           Timestamp = DateTime.UtcNow
       };
-      _context.AuditLogs.Add(log);
-      await _context.SaveChangesAsync();
+      await _context.AuditLogs.AddAsync(log);
       return log;
     }
-
   }
 }

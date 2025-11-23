@@ -6,136 +6,124 @@ using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using EnterpriseGradeInventoryAPI.DTO.Input;
 using EnterpriseGradeInventoryAPI.DTO.Output;
-using EnterpriseGradeInventoryAPI.GraphQL.Mutations;
-
 
 namespace EnterpriseGradeInventoryAPI.GraphQL.Mutations
 {
   [Authorize] 
   public class InventoryMutation
   {
-    private readonly AuditLogService _auditService;
-
-    public InventoryMutation(AuditLogService auditService)
-    {
-      _auditService = auditService;
-    }
-
     //Add Inventory to the Database
-    public async Task<InventoryPayload> addInventory([Service] ApplicationDbContext context, ClaimsPrincipal user, List<InventoryInput> inventory)
-    {
-      try
-      {
-        // Validate userId format
-        if (!int.TryParse(user.FindFirst(ClaimTypes.NameIdentifier)?.Value, out int userIdInt))
-        {
+      public async Task<List<InventoryPayload>> AddInventory(
+      [Service] ApplicationDbContext context,
+      [Service] AuditLogService auditService,
+      ClaimsPrincipal user,
+      List<InventoryInput> inventory)
+  {
+      if (!int.TryParse(user.FindFirst(ClaimTypes.NameIdentifier)?.Value, out int userIdInt))
           throw new GraphQLException("Invalid user ID format");
-        }
 
-        foreach (var item in inventory)
-        {
-          // Input validation
-          if (string.IsNullOrWhiteSpace(item.ItemSKU) || string.IsNullOrWhiteSpace(item.ProductName))
-          {
-            throw new GraphQLException("ItemSKU and ProductName are required");
-          }
+      var strategy = context.Database.CreateExecutionStrategy();
 
-          if (item.QuantityInStock < 0 || item.CostPerUnit < 0)
-          {
-            throw new GraphQLException("Quantity and Cost must be non-negative");
-          }
-
-          // Check for duplicate SKU
-          var existingItem = await context.Inventories.FirstOrDefaultAsync(i => i.ItemSKU == item.ItemSKU && i.UserId == userIdInt);
-          if (existingItem != null)
-          {
-            throw new GraphQLException($"Item with SKU '{item.ItemSKU}' already exists");
-          }
-
-          var newInventory = new Inventory
-          {
-            ItemSKU = item.ItemSKU,
-            ProductName = item.ProductName,
-            Category = item.Category,
-            WarehouseLocation = item.WarehouseLocation,
-            RackLocation = item.RackLocation,
-            QuantityInStock = item.QuantityInStock,
-            ReorderLevel = item.ReorderLevel,
-            UnitOfMeasure = item.UnitOfMeasure,
-            CostPerUnit = item.CostPerUnit,
-            TotalValue = item.QuantityInStock * item.CostPerUnit,
-            UserId = userIdInt,
-            LastRestocked = DateTime.UtcNow
-          };
-
-          // Handle storage location association with validation
-          var storageLocation = await context.StorageLocations
-            .FirstOrDefaultAsync(sl => sl.SectionName == item.RackLocation && sl.UserId == userIdInt);
-          
-          if (storageLocation != null)
-          {
-            // Check capacity constraints
-            if (storageLocation.OccupiedCapacity + item.QuantityInStock > storageLocation.MaxCapacity)
-            {
-              throw new GraphQLException($"Adding {item.QuantityInStock} items would exceed storage capacity for location '{item.RackLocation}'");
-            }
-
-            newInventory.StorageLocationId = storageLocation.Id;
-            storageLocation.OccupiedCapacity += item.QuantityInStock;
-          }
-        
-
-          context.Inventories.Add(newInventory);
-          await context.SaveChangesAsync();
-          await _auditService.CreateAuditLog(
-              "Add",       
-              userIdInt,    
-              "Inventories",    
-              newInventory.Id,  
-              null,     
-              newInventory.QuantityInStock
-          );
-        }
-        
-        // Get the last added inventory for response
-        var lastInventory = await context.Inventories
-          .Where(i => i.UserId == userIdInt)
-          .OrderByDescending(i => i.Id)
-          .FirstAsync();
-        
-        return new InventoryPayload
-        {
-          Id = lastInventory.Id,
-          ItemName = lastInventory.ProductName,
-          Quantity = lastInventory.QuantityInStock,
-          UserId = userIdInt
-        };
-      }
-      catch (Exception ex)
+      return await strategy.ExecuteAsync(async () =>
       {
-        // Handle exceptions
-        Console.WriteLine(ex.Message);
-        throw new GraphQLException("Error adding inventory", ex);
-      }
-    }
+          await using var transaction = await context.Database.BeginTransactionAsync();
+          var addedInventories = new List<Inventory>();
 
-    public async Task<DeletedInventoryPayload> DeleteInventory([Service] ApplicationDbContext context, ClaimsPrincipal user, int inventoryId)
+          try
+          {
+              foreach (var item in inventory)
+              {
+                  // basic validation to ensure required fields are present
+                  if (string.IsNullOrWhiteSpace(item.ItemSKU) || string.IsNullOrWhiteSpace(item.ProductName))
+                      throw new GraphQLException("ItemSKU and ProductName are required");
+                  if (item.QuantityInStock < 0 || item.CostPerUnit < 0)
+                      throw new GraphQLException("Quantity and Cost must be non-negative");
+
+                  // check duplicates in DB + batch
+                  var existingItem = await context.Inventories
+                      .FirstOrDefaultAsync(i => i.ItemSKU == item.ItemSKU && i.UserId == userIdInt);
+                  if (existingItem != null || addedInventories.Any(i => i.ItemSKU == item.ItemSKU))
+                      throw new GraphQLException($"Item with SKU '{item.ItemSKU}' already exists");
+
+                  var newInventory = new Inventory
+                  {
+                      ItemSKU = item.ItemSKU,
+                      ProductName = item.ProductName,
+                      Category = item.Category,
+                      WarehouseLocation = item.WarehouseLocation,
+                      RackLocation = item.RackLocation,
+                      QuantityInStock = item.QuantityInStock,
+                      ReorderLevel = item.ReorderLevel,
+                      UnitOfMeasure = item.UnitOfMeasure,
+                      CostPerUnit = item.CostPerUnit,
+                      TotalValue = item.QuantityInStock * item.CostPerUnit,
+                      UserId = userIdInt,
+                      LastRestocked = DateTime.UtcNow
+                  };
+
+                  var storageLocation = await context.StorageLocations
+                      .FirstOrDefaultAsync(sl => sl.SectionName == item.RackLocation && sl.UserId == userIdInt);
+
+                  if (storageLocation != null)
+                  {
+                      var alreadyPlanned = addedInventories
+                          .Where(i => i.StorageLocationId == storageLocation.Id)
+                          .Sum(i => i.QuantityInStock);
+
+                      if (storageLocation.OccupiedCapacity + alreadyPlanned + item.QuantityInStock > storageLocation.MaxCapacity)
+                          throw new GraphQLException(
+                              $"Adding {item.QuantityInStock} items would exceed storage capacity for location '{item.RackLocation}'");
+
+                      newInventory.StorageLocationId = storageLocation.Id;
+                      storageLocation.OccupiedCapacity += item.QuantityInStock;
+                  }
+
+                  context.Inventories.Add(newInventory);
+                  addedInventories.Add(newInventory);
+              }
+
+              await context.SaveChangesAsync();
+
+              foreach (var inv in addedInventories)
+                  await auditService.CreateAuditLog("Add", userIdInt, "Inventories", inv.Id, null, inv.QuantityInStock);
+
+              await context.SaveChangesAsync();
+              await transaction.CommitAsync();
+
+              return addedInventories.Select(inv => new InventoryPayload
+              {
+                  Id = inv.Id,
+                  ItemName = inv.ProductName,
+                  Quantity = inv.QuantityInStock,
+                  UserId = inv.UserId
+              }).ToList();
+          }
+          catch(Exception ex)
+          {
+              await transaction.RollbackAsync();
+              Console.WriteLine($"AddInventory error: {ex.Message}\n{ex.StackTrace}");
+              throw;
+          }
+      });
+  }
+
+
+
+    public async Task<DeletedInventoryPayload> DeleteInventory(
+      [Service] ApplicationDbContext context, 
+      [Service] AuditLogService auditService, 
+      ClaimsPrincipal user, 
+      int inventoryId)
     {
       if(!int.TryParse(user.FindFirst(ClaimTypes.NameIdentifier)?.Value, out int userIdInt))
-      {
         throw new GraphQLException("Invalid user ID format");
-      }
 
       if(inventoryId <= 0)
-      {
         throw new GraphQLException("Invalid inventory ID");
-      }
 
       var item = await context.Inventories.FindAsync(inventoryId);
       if(item == null || item.UserId != userIdInt)
-      {
         throw new GraphQLException("Inventory item not found or access denied");
-      }
       
       // Update storage location occupied capacity if item is linked to a storage location
       if(item.StorageLocationId.HasValue)
@@ -153,8 +141,10 @@ namespace EnterpriseGradeInventoryAPI.GraphQL.Mutations
       }
       
       context.Inventories.Remove(item);
+
       await context.SaveChangesAsync();
-      
+      await auditService.CreateAuditLog("Delete", userIdInt, "Inventories", item.Id, item.QuantityInStock, null);
+      await context.SaveChangesAsync();
       return new DeletedInventoryPayload
       {
         Id = item.Id,
@@ -162,8 +152,17 @@ namespace EnterpriseGradeInventoryAPI.GraphQL.Mutations
       };
     }
 
-    public async Task<UpdatedInventoryPayload> UpdateInventory([Service] ApplicationDbContext context, ClaimsPrincipal user, int inventoryId, string itemSKU, string category, string productName, int quantityInStock, int reorderLevel)
-    {
+    public async Task<UpdatedInventoryPayload> UpdateInventory(
+      [Service] ApplicationDbContext context,
+      [Service] AuditLogService auditService,
+      ClaimsPrincipal user, 
+      int inventoryId, 
+      string itemSKU, 
+      string category, 
+      string productName, 
+      int quantityInStock, 
+      int reorderLevel)
+    {     
       if(!int.TryParse(user.FindFirst(ClaimTypes.NameIdentifier)?.Value, out int userIdInt))
       {
         throw new GraphQLException("Invalid user ID format");
@@ -216,12 +215,15 @@ namespace EnterpriseGradeInventoryAPI.GraphQL.Mutations
       }
 
       await context.SaveChangesAsync();
-      await _auditService.CreateAuditLog(
-          "Update",       
-          userIdInt,    
-          "Inventories",    
-          item.Id
+      await auditService.CreateAuditLog(
+        "Update", 
+        userIdInt, 
+        "Inventories", 
+        item.Id, 
+        oldQuantity, 
+        item.QuantityInStock
       );
+      await context.SaveChangesAsync();
 
       return new UpdatedInventoryPayload
       {
