@@ -6,4 +6,19 @@ namespace EnterpriseGradeInventoryAPI.DTO.Output
     public string Name { get; set; } = string.Empty;
     public string Location { get; set; } = string.Empty;
   }
+
+  public class SelectedWarehousePayload
+  {
+    public int WarehouseId { get; set; }
+    public string? WarehouseName { get; set; }
+    public string? WarehouseCode { get; set; }
+    public string? Address { get; set; }
+    public string? Manager { get; set; }
+    public string? Region { get; set; }
+    public string? Status { get; set; }
+    public int TotalProducts { get; set; }
+    public int AvailableSectors { get; set; }
+    public int CapacityUtilization { get; set; }
+    
+  }
 }
