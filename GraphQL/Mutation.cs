@@ -37,6 +37,9 @@ namespace EnterpriseGradeInventoryAPI.GraphQL
       descriptor.Field<StorageLocationMutation>(t => t.DeleteStorageLocation(default!, default!, default!, default!))
         .Name("deleteStorageLocation")
         .Description("Delete a Storage Location");
+      descriptor.Field<PurchaseOrderMutation>(t => t.AddPurchaseOrder(default!, default!, default!, default!, default!, default!, default!, default!, default!, default!, default!))
+        .Name("addPurchaseOrder")
+        .Description("Add a new Purchase Order");
     }
   }
 }

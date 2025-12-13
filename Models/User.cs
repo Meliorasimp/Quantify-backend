@@ -17,5 +17,6 @@ namespace EnterpriseGradeInventoryAPI.Models
         public ICollection<Inventory> Inventories { get; set; } = new List<Inventory>();
         public ICollection<Warehouse> Warehouses { get; set; } = new List<Warehouse>();
         public ICollection<StorageLocation> StorageLocations { get; set; } = new List<StorageLocation>();
+        public ICollection<PurchaseOrder> PurchaseOrders { get; set; } = new List<PurchaseOrder>();
     }
 }

@@ -15,6 +15,8 @@ namespace EnterpriseGradeInventoryAPI.Data
         public DbSet<Warehouse> Warehouses { get; set; }
         public DbSet<StorageLocation> StorageLocations { get; set; }
         public DbSet<AuditLog> AuditLogs { get; set; }
+        public DbSet<PurchaseOrder> PurchaseOrders { get; set; }
+        public DbSet<PurchaseOrderItems> PurchaseOrderItems { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

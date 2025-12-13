@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace EnterpriseGradeInventoryAPI.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20251120131516_InitialPostgreSQL")]
-    partial class InitialPostgreSQL
+    [Migration("20251213023126_PostgreSQL_AddPurchaseOrderItems")]
+    partial class PostgreSQL_AddPurchaseOrderItems
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -259,6 +259,75 @@ namespace EnterpriseGradeInventoryAPI.Migrations
                     b.ToTable("Warehouses");
                 });
 
+            modelBuilder.Entity("PurchaseOrder", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("DeliveryWarehouse")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("ExpectedDeliveryDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Notes")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("OrderDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("PurchaseOrderNumber")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("SupplierId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("TotalAmount")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("PurchaseOrders");
+                });
+
+            modelBuilder.Entity("PurchaseOrderItems", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("Price")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ProductName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("PurchaseOrderId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PurchaseOrderId");
+
+                    b.ToTable("PurchaseOrderItems");
+                });
+
             modelBuilder.Entity("EnterpriseGradeInventoryAPI.Models.AuditLog", b =>
                 {
                     b.HasOne("EnterpriseGradeInventoryAPI.Models.User", "User")
@@ -318,13 +387,42 @@ namespace EnterpriseGradeInventoryAPI.Migrations
                     b.Navigation("CreatedByUser");
                 });
 
+            modelBuilder.Entity("PurchaseOrder", b =>
+                {
+                    b.HasOne("EnterpriseGradeInventoryAPI.Models.User", "User")
+                        .WithMany("PurchaseOrders")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("PurchaseOrderItems", b =>
+                {
+                    b.HasOne("PurchaseOrder", "PurchaseOrder")
+                        .WithMany("Items")
+                        .HasForeignKey("PurchaseOrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("PurchaseOrder");
+                });
+
             modelBuilder.Entity("EnterpriseGradeInventoryAPI.Models.User", b =>
                 {
                     b.Navigation("Inventories");
 
+                    b.Navigation("PurchaseOrders");
+
                     b.Navigation("StorageLocations");
 
                     b.Navigation("Warehouses");
+                });
+
+            modelBuilder.Entity("PurchaseOrder", b =>
+                {
+                    b.Navigation("Items");
                 });
 #pragma warning restore 612, 618
         }
