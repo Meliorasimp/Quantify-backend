@@ -39,11 +39,11 @@ public class PurchaseOrderMutation
       {
         SupplierName = supplierName,
         DeliveryWarehouse = deliveryWarehouse,
-        ExpectedDeliveryDate = DateTime.Parse(expectedDeliveryDate),
+        ExpectedDeliveryDate = DateTime.SpecifyKind(DateTime.Parse(expectedDeliveryDate), DateTimeKind.Utc),
         PurchaseOrderNumber = id,
         SupplierId = supplierID,
         Notes = notes ?? "",
-        OrderDate = DateTime.Parse(orderDate),
+        OrderDate = DateTime.SpecifyKind(DateTime.Parse(orderDate), DateTimeKind.Utc),
         TotalAmount = (int)totalAmount,
         Items = PurchaseOrderItems,
         UserId = userId
