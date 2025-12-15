@@ -12,8 +12,8 @@ public class AuditLogMutation
     int userId,
     string tableName,
     int recordId,
-    int? oldValue,
-    int? newValue)
+    string? oldValue,
+    string? newValue)
     {
         return await auditLogService.CreateAuditLog(action, userId, tableName, recordId, oldValue, newValue);
     }

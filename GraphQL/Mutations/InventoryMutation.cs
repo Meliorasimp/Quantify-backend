@@ -86,7 +86,7 @@ namespace EnterpriseGradeInventoryAPI.GraphQL.Mutations
               await context.SaveChangesAsync();
 
               foreach (var inv in addedInventories)
-                  await auditService.CreateAuditLog("Add", userIdInt, "Inventories", inv.Id, null, inv.QuantityInStock);
+                  await auditService.CreateAuditLog("Add", userIdInt, "Inventories", inv.Id, null, inv.QuantityInStock.ToString());
 
               await context.SaveChangesAsync();
               await transaction.CommitAsync();
@@ -144,7 +144,7 @@ namespace EnterpriseGradeInventoryAPI.GraphQL.Mutations
       context.Inventories.Remove(item);
 
       await context.SaveChangesAsync();
-      await auditService.CreateAuditLog("Delete", userIdInt, "Inventories", item.Id, item.QuantityInStock, null);
+      await auditService.CreateAuditLog("Delete", userIdInt, "Inventories", item.Id, item.QuantityInStock.ToString(), null);
       await context.SaveChangesAsync();
       return new DeletedInventoryPayload
       {
@@ -221,8 +221,8 @@ namespace EnterpriseGradeInventoryAPI.GraphQL.Mutations
         userIdInt, 
         "Inventories", 
         item.Id, 
-        oldQuantity, 
-        item.QuantityInStock
+        oldQuantity.ToString(), 
+        item.QuantityInStock.ToString()
       );
       await context.SaveChangesAsync();
 

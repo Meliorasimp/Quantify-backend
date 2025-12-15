@@ -7,8 +7,8 @@ namespace EnterpriseGradeInventoryAPI.Models
     public string Tablename { get; set; } = null!;
     public DateTime Timestamp { get; set; } = DateTime.UtcNow;
     public int RecordId { get; set; }
-    public int? OldValue { get; set; }
-    public int? NewValue { get; set; }
+    public string? OldValue { get; set; }
+    public string? NewValue { get; set; }
     public int UserId { get; set; }
     // Navigation property
     public User? User { get; set; }

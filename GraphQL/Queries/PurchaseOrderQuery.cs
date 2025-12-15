@@ -10,24 +10,79 @@ using System.Security.Claims;
 [ExtendObjectType(typeof(Query))]
 public class PurchaseOrderQuery
 {
-  public IQueryable<AllPurchaseOrdersPayload> GetAllPurchaseOrder([Service] ApplicationDbContext context)
+  public IQueryable<AllPurchaseOrdersPayload> GetAllPendingPurchaseOrders([Service] ApplicationDbContext context)
   {
     try
     {
-      return context.PurchaseOrders.Select(po => new AllPurchaseOrdersPayload
-        {
-          Id = po.Id,
-          PurchaseOrderNumber = po.PurchaseOrderNumber,
-          SupplierName = po.SupplierName,
-          OrderDate = po.OrderDate.ToString("MM/dd/yyyy"),
-          TotalAmount = po.TotalAmount,
-          Status = po.Status
-        });
+      return context.PurchaseOrders.Where(po => po.Status == "Pending").Select(po => new AllPurchaseOrdersPayload
+      {
+        Id = po.Id,
+        PurchaseOrderNumber = po.PurchaseOrderNumber,
+        SupplierName =  po.SupplierName,
+        OrderDate = po.OrderDate.ToString("dd/MM/yyyy"),
+        TotalAmount = po.TotalAmount,
+        Status = po.Status
+      });
     }
     catch (Exception ex)
     {
       throw new GraphQLException($"Error fetching purchase orders: {ex.Message}");
-    }  
+    }
+  }
+
+  public IQueryable<DeliveredPurchaseOrdersPayload> GetAllDeliveredPurchasedOrders([Service] ApplicationDbContext context)
+  {
+    try
+    {
+      return context.PurchaseOrders.Where(po => po.Status == "Delivered").Select(po => new DeliveredPurchaseOrdersPayload
+      {
+        Id = po.Id,
+        PurchaseOrderNumber = po.PurchaseOrderNumber,
+        OrderDate = po.OrderDate.ToString("dd/MM/yyyy"),
+        SupplierName = po.SupplierName,
+        StaffResponsible = po.User.FirstName + " " + po.User.LastName
+      });
+    } 
+    catch (Exception ex)
+    {
+      throw new GraphQLException($"Error fetching delivered purchase orders: {ex.Message}");
+    }
+  }
+
+  public IQueryable<PurchaseOrderAuditPayload> GetPurchaseOrderAuditLogs([Service] ApplicationDbContext context)
+  {
+    try
+    {
+      var AuditLogs = 
+        from AuditLog in context.AuditLogs 
+          where AuditLog.Tablename == "PurchaseOrders"
+
+        join po in context.PurchaseOrders 
+          on AuditLog.RecordId equals po.Id
+        
+        join qty in context.PurchaseOrderItems
+          .GroupBy(i => i.PurchaseOrderId)
+          .Select(g => new
+          {
+            PurchaseOrderId = g.Key,
+            TotalUnits = g.Sum(i => i.Quantity)
+          })
+          on po.Id equals qty.PurchaseOrderId
+
+        select new PurchaseOrderAuditPayload
+        {
+          Id = AuditLog.Id,
+          Action = AuditLog.Action,
+          TotalUnits = qty.TotalUnits,
+          SupplierName = po.SupplierName,
+          Timestamp = AuditLog.Timestamp.ToString("dd/MM/yyyy HH:mm:ss")
+        };
+      return AuditLogs;
+    }
+    catch (Exception ex)
+    {
+      throw new GraphQLException($"Error fetching purchase order audit logs: {ex.Message}");
+    }
   }
   public async Task<PurchaseOrderDetailsPayload?> GetPurchaseOrderById([Service] ApplicationDbContext context, int id, ClaimsPrincipal user)
   {
@@ -35,10 +90,8 @@ public class PurchaseOrderQuery
       Console.WriteLine($"[DEBUG] GetPurchaseOrderById called with ID: {id}");
       
       var order = await context.PurchaseOrders.Include(po =>po.Items).FirstOrDefaultAsync(po => po.Id == id);
-      Console.WriteLine($"[DEBUG] Order fetched: {(order != null ? $"Found - PO#{order.PurchaseOrderNumber}" : "Not found")}");
       
       var items = await context.PurchaseOrderItems.Where(poi => poi.PurchaseOrderId == id).ToListAsync();
-      Console.WriteLine($"[DEBUG] Items fetched: {items.Count} items found");
       
       if(order == null)
       {
@@ -47,7 +100,6 @@ public class PurchaseOrderQuery
       }
 
       var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-      Console.WriteLine($"[DEBUG] User ID from claims: {userId ?? "null"}");
       
       if(userId == null)
         throw new GraphQLException("User not authenticated");
@@ -56,7 +108,6 @@ public class PurchaseOrderQuery
         throw new GraphQLException("Invalid user ID format");
 
       var userName = await context.Users.Where(u => u.Id == int.Parse(userId)).Select(u => $"{u.FirstName} {u.LastName}").FirstOrDefaultAsync();
-      Console.WriteLine($"[DEBUG] User name fetched: {userName ?? "null"}");
       
       var OrderDetails = new PurchaseOrderDetailsPayload
       {
@@ -86,4 +137,6 @@ public class PurchaseOrderQuery
       throw new GraphQLException($"Error fetching purchase order details: {ex.Message}");
     }
   }
+
+  
 }

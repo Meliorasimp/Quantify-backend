@@ -96,6 +96,7 @@ builder.Services.AddAuthorization();
 builder.Services
     .AddGraphQLServer()
     .AddQueryType<EnterpriseGradeInventoryAPI.GraphQL.Query>()
+    .AddTypeExtension<InventoryQuery>()
     .AddTypeExtension<WarehouseQuery>()
     .AddTypeExtension<StorageLocationQuery>()
     .AddTypeExtension<PurchaseOrderQuery>()

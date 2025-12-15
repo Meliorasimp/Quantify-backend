@@ -34,11 +34,11 @@ namespace EnterpriseGradeInventoryAPI.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int?>("NewValue")
-                        .HasColumnType("int");
+                    b.Property<string>("NewValue")
+                        .HasColumnType("nvarchar(max)");
 
-                    b.Property<int?>("OldValue")
-                        .HasColumnType("int");
+                    b.Property<string>("OldValue")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("RecordId")
                         .HasColumnType("int");

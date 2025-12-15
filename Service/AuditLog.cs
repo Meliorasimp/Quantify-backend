@@ -16,8 +16,8 @@ namespace EnterpriseGradeInventoryAPI
     int userId,
     string tableName,
     int recordId,
-    int? oldValue = null,
-    int? newValue = null
+    string? oldValue = null,
+    string? newValue = null
     )
     {
       var log = new AuditLog

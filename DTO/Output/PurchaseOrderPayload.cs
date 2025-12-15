@@ -38,5 +38,27 @@ namespace EnterpriseGradeInventoryAPI.DTO.Output
     public string Status { get; set; } = string.Empty;
     public List<PurchaseOrderItemPayload> Items { get; set; } = new List<PurchaseOrderItemPayload>();
   }
+  public class StatusChangePayload
+  {
+    public int Id { get; set; }
+    public string Status { get; set; } = string.Empty;
+  }
 
+  public class DeliveredPurchaseOrdersPayload
+  {
+    public int Id { get; set; }
+    public int PurchaseOrderNumber { get; set; }
+    public string OrderDate { get; set; } = string.Empty;
+    public string SupplierName { get; set; } = string.Empty;
+    public string StaffResponsible { get; set; } = string.Empty;
+  }
+
+  public class PurchaseOrderAuditPayload
+  {
+    public int Id { get; set; }
+    public string Action { get; set; } = string.Empty;
+    public int TotalUnits { get; set; }
+    public string SupplierName { get; set; } = string.Empty;
+    public string Timestamp { get; set; } = string.Empty;
+  }
 }

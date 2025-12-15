@@ -7,6 +7,7 @@ using System.Security.Claims;
 using System.Linq.Expressions;
 using EnterpriseGradeInventoryAPI;
 using EnterpriseGradeInventoryAPI.GraphQL;
+using Microsoft.EntityFrameworkCore;
 
 [ExtendObjectType(typeof(Mutation))]
 public class PurchaseOrderMutation
@@ -69,4 +70,35 @@ public class PurchaseOrderMutation
       throw new GraphQLException(new Error($"Error creating purchase order: {ex.Message}", "PURCHASE_ORDER_CREATION_FAILED"));
     }
   }
+
+  public async Task<StatusChangePayload> ChangeStatusOfPurchaseOrder(
+    [Service] ApplicationDbContext context, 
+    [Service] AuditLogService auditLogService, 
+    ClaimsPrincipal user, 
+    int id
+    )
+  {
+    try
+    {
+      var order = await context.PurchaseOrders.FirstOrDefaultAsync(po => po.Id == id);
+      _ = order ?? throw new GraphQLException(new Error("Purchase order not found", "PURCHASE_ORDER_NOT_FOUND"));
+        
+      order.Status = "Delivered";
+      var userId = int.Parse(user.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+      await auditLogService.CreateAuditLog("Update", userId, "PurchaseOrders", order.Id, "Pending", "Delivered");
+      await context.SaveChangesAsync();
+    }
+    catch (Exception ex)
+    {
+      throw new GraphQLException(new Error($"Error changing status: {ex.Message}", "PURCHASE_ORDER_STATUS_CHANGE_FAILED"));
+    }
+
+    return new StatusChangePayload
+    {
+      Id = id,
+      Status = "Delivered"
+    };
+  }
+
+  
 }
