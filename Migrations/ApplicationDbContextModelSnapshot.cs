@@ -34,6 +34,9 @@ namespace EnterpriseGradeInventoryAPI.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("DeletedValue")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("NewValue")
                         .HasColumnType("nvarchar(max)");
 
@@ -43,7 +46,7 @@ namespace EnterpriseGradeInventoryAPI.Migrations
                     b.Property<int>("RecordId")
                         .HasColumnType("integer");
 
-                    b.Property<string>("Tablename")
+                    b.Property<string>("TableName")
                         .IsRequired()
                         .HasColumnType("text");
 
@@ -57,7 +60,7 @@ namespace EnterpriseGradeInventoryAPI.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("AuditLogs", (string)null);
+                    b.ToTable("AuditLogs");
                 });
 
             modelBuilder.Entity("EnterpriseGradeInventoryAPI.Models.Inventory", b =>
@@ -119,7 +122,45 @@ namespace EnterpriseGradeInventoryAPI.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Inventories", (string)null);
+                    b.ToTable("Inventories");
+                });
+
+            modelBuilder.Entity("EnterpriseGradeInventoryAPI.Models.StockMovement", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ItemSKU")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ProductName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("Timestamp")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("WarehouseLocation")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("StockMovements");
                 });
 
             modelBuilder.Entity("EnterpriseGradeInventoryAPI.Models.StorageLocation", b =>
@@ -167,7 +208,7 @@ namespace EnterpriseGradeInventoryAPI.Migrations
 
                     b.HasIndex("WarehouseId");
 
-                    b.ToTable("StorageLocations", (string)null);
+                    b.ToTable("StorageLocations");
                 });
 
             modelBuilder.Entity("EnterpriseGradeInventoryAPI.Models.User", b =>
@@ -200,7 +241,7 @@ namespace EnterpriseGradeInventoryAPI.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Users", (string)null);
+                    b.ToTable("Users");
                 });
 
             modelBuilder.Entity("EnterpriseGradeInventoryAPI.Models.Warehouse", b =>
@@ -253,7 +294,7 @@ namespace EnterpriseGradeInventoryAPI.Migrations
 
                     b.HasIndex("CreatedByUserId");
 
-                    b.ToTable("Warehouses", (string)null);
+                    b.ToTable("Warehouses");
                 });
 
             modelBuilder.Entity("PurchaseOrder", b =>
@@ -302,7 +343,7 @@ namespace EnterpriseGradeInventoryAPI.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("PurchaseOrders", (string)null);
+                    b.ToTable("PurchaseOrders");
                 });
 
             modelBuilder.Entity("PurchaseOrderItems", b =>
@@ -330,7 +371,7 @@ namespace EnterpriseGradeInventoryAPI.Migrations
 
                     b.HasIndex("PurchaseOrderId");
 
-                    b.ToTable("PurchaseOrderItems", (string)null);
+                    b.ToTable("PurchaseOrderItems");
                 });
 
             modelBuilder.Entity("EnterpriseGradeInventoryAPI.Models.AuditLog", b =>

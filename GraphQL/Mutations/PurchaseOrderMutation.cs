@@ -49,10 +49,10 @@ public class PurchaseOrderMutation
         Items = PurchaseOrderItems,
         UserId = userId
       };
+      var totalPurchasedQuantity = PurchaseOrderItems.Sum(i => i.Quantity);
       context.PurchaseOrders.Add(purchaseOrder);
       context.PurchaseOrderItems.AddRange(PurchaseOrderItems);  
-      await context.SaveChangesAsync();
-      await auditLogService.CreateAuditLog("Create", userId, "PurchaseOrders", purchaseOrder.Id);
+      await auditLogService.CreateAuditLog("Create", userId, "PurchaseOrders", purchaseOrder.Id, null, totalPurchasedQuantity.ToString(), null);
       await context.SaveChangesAsync();
 
       return new PurchaseOrderPayload

@@ -17,6 +17,7 @@ namespace EnterpriseGradeInventoryAPI.GraphQL.Mutations
       public async Task<List<InventoryPayload>> AddInventory(
       [Service] ApplicationDbContext context,
       [Service] AuditLogService auditService,
+      [Service] StockMovementService stockMovementService,
       ClaimsPrincipal user,
       List<InventoryInput> inventory)
   {
@@ -87,7 +88,10 @@ namespace EnterpriseGradeInventoryAPI.GraphQL.Mutations
 
               foreach (var inv in addedInventories)
                   await auditService.CreateAuditLog("Add", userIdInt, "Inventories", inv.Id, null, inv.QuantityInStock.ToString());
-
+              
+              foreach (var inv in addedInventories)
+                await stockMovementService.RecordStockMovement(inv.ItemSKU, inv.ProductName, inv.QuantityInStock, "Inbound", inv.WarehouseLocation, userIdInt);
+              
               await context.SaveChangesAsync();
               await transaction.CommitAsync();
 
@@ -142,9 +146,7 @@ namespace EnterpriseGradeInventoryAPI.GraphQL.Mutations
       }
       
       context.Inventories.Remove(item);
-
-      await context.SaveChangesAsync();
-      await auditService.CreateAuditLog("Delete", userIdInt, "Inventories", item.Id, item.QuantityInStock.ToString(), null);
+      await auditService.CreateAuditLog("Delete", userIdInt, "Inventories", item.Id, null, null, item.QuantityInStock.ToString());
       await context.SaveChangesAsync();
       return new DeletedInventoryPayload
       {
@@ -158,11 +160,11 @@ namespace EnterpriseGradeInventoryAPI.GraphQL.Mutations
       [Service] AuditLogService auditService,
       ClaimsPrincipal user, 
       int inventoryId, 
-      string itemSKU, 
-      string category, 
-      string productName, 
-      int quantityInStock, 
-      int reorderLevel)
+      string? itemSKU = null, 
+      string? category = null, 
+      string? productName = null, 
+      int? quantityInStock = null, 
+      int? reorderLevel = null)
     {     
       if(!int.TryParse(user.FindFirst(ClaimTypes.NameIdentifier)?.Value, out int userIdInt))
       {
@@ -178,29 +180,34 @@ namespace EnterpriseGradeInventoryAPI.GraphQL.Mutations
       // Store old quantity for storage location capacity update
       int oldQuantity = item.QuantityInStock;
 
-      // Update fields
-      item.ItemSKU = itemSKU;
-      item.Category = category;
-      item.ProductName = productName;
-      item.QuantityInStock = quantityInStock;
-      item.ReorderLevel = reorderLevel;
+      // Update fields only if provided
+      if(!string.IsNullOrWhiteSpace(itemSKU))
+        item.ItemSKU = itemSKU;
+      if(!string.IsNullOrWhiteSpace(category))
+        item.Category = category;
+      if(!string.IsNullOrWhiteSpace(productName))
+        item.ProductName = productName;
+      if(quantityInStock.HasValue)
+        item.QuantityInStock = quantityInStock.Value;
+      if(reorderLevel.HasValue)
+        item.ReorderLevel = reorderLevel.Value;
       item.TotalValue = item.QuantityInStock * item.CostPerUnit;
 
       // Update storage location occupied capacity if quantity changed
-      if(item.StorageLocationId.HasValue && oldQuantity != quantityInStock)
+      if(item.StorageLocationId.HasValue && oldQuantity != item.QuantityInStock)
       {
         var storageLocation = await context.StorageLocations.FindAsync(item.StorageLocationId.Value);
         if(storageLocation != null)
         {
           // Calculate the difference in quantity
-          int quantityDifference = quantityInStock - oldQuantity;
+          int quantityDifference = item.QuantityInStock - oldQuantity;
           
           // Check if adding more items would exceed capacity
           if(quantityDifference > 0)
           {
             if(storageLocation.OccupiedCapacity + quantityDifference > storageLocation.MaxCapacity)
             {
-              throw new GraphQLException($"Updating to {quantityInStock} items would exceed storage capacity. Available space: {storageLocation.MaxCapacity - storageLocation.OccupiedCapacity}");
+              throw new GraphQLException($"Updating to {item.QuantityInStock} items would exceed storage capacity. Available space: {storageLocation.MaxCapacity - storageLocation.OccupiedCapacity}");
             }
           }
           
@@ -215,14 +222,14 @@ namespace EnterpriseGradeInventoryAPI.GraphQL.Mutations
         }
       }
 
-      await context.SaveChangesAsync();
       await auditService.CreateAuditLog(
         "Update", 
         userIdInt, 
         "Inventories", 
         item.Id, 
         oldQuantity.ToString(), 
-        item.QuantityInStock.ToString()
+        item.QuantityInStock.ToString(),
+        null
       );
       await context.SaveChangesAsync();
 

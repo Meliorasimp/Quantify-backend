@@ -17,7 +17,7 @@ namespace EnterpriseGradeInventoryAPI.Data
         public DbSet<AuditLog> AuditLogs { get; set; }
         public DbSet<PurchaseOrder> PurchaseOrders { get; set; }
         public DbSet<PurchaseOrderItems> PurchaseOrderItems { get; set; }
-
+        public DbSet<StockMovement> StockMovements { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             // Configure StorageLocation to Warehouse relationship - Cascade when warehouse is deleted

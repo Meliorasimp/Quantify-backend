@@ -16,7 +16,11 @@ namespace EnterpriseGradeInventoryAPI.GraphQL.Mutations
   public class LoginMutation
   {
     [AllowAnonymous]
-    public async Task<LoginPayload> loginUser([Service] ApplicationDbContext context, string loginemail, string loginpassword)
+    public async Task<LoginPayload> LoginUser(
+      [Service] ApplicationDbContext context, 
+      [Service] AuditLogService auditService, 
+      string loginemail, 
+      string loginpassword)
     {
       try
       {
@@ -60,7 +64,8 @@ namespace EnterpriseGradeInventoryAPI.GraphQL.Mutations
 
         //Convert the Token into a String Format that can be sent to the Client
         var jwt = new JwtSecurityTokenHandler().WriteToken(token);
-
+        await auditService.CreateAuditLog("Login", user.Id, "Users", user.Id, null, null, null);
+        await context.SaveChangesAsync();
         return new LoginPayload
         {
           Id = user.Id,

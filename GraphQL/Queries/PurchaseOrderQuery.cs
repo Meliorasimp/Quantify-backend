@@ -55,7 +55,7 @@ public class PurchaseOrderQuery
     {
       var AuditLogs = 
         from AuditLog in context.AuditLogs 
-          where AuditLog.Tablename == "PurchaseOrders"
+          where AuditLog.TableName == "PurchaseOrders"
 
         join po in context.PurchaseOrders 
           on AuditLog.RecordId equals po.Id

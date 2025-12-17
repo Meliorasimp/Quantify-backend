@@ -17,16 +17,18 @@ namespace EnterpriseGradeInventoryAPI
     string tableName,
     int recordId,
     string? oldValue = null,
-    string? newValue = null
+    string? newValue = null,
+    string? deletedValue = null
     )
     {
       var log = new AuditLog
       {
           Action = action,
-          Tablename = tableName,
+          TableName = tableName,
           RecordId = recordId,
           OldValue = oldValue,
           NewValue = newValue,
+          DeletedValue = deletedValue,
           UserId = userId,
           Timestamp = DateTime.UtcNow
       };

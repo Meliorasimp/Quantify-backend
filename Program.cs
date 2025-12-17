@@ -49,6 +49,7 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<AuditLogService>();
+builder.Services.AddScoped<StockMovementService>();
 // Use SQL Server for Development, PostgreSQL for Production
 if (builder.Environment.IsDevelopment())
 {
@@ -100,6 +101,7 @@ builder.Services
     .AddTypeExtension<WarehouseQuery>()
     .AddTypeExtension<StorageLocationQuery>()
     .AddTypeExtension<PurchaseOrderQuery>()
+    .AddTypeExtension<AuditLogQuery>()
     .AddMutationType<EnterpriseGradeInventoryAPI.GraphQL.Mutation>()
     .AddTypeExtension<AuditLogMutation>()
     .AddTypeExtension<LoginMutation>()
