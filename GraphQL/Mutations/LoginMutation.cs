@@ -15,6 +15,7 @@ namespace EnterpriseGradeInventoryAPI.GraphQL.Mutations
   [ExtendObjectType(typeof(Mutation))]
   public class LoginMutation
   {
+    [GraphQLName("loginUser")]
     [AllowAnonymous]
     public async Task<LoginPayload> LoginUser(
       [Service] ApplicationDbContext context, 

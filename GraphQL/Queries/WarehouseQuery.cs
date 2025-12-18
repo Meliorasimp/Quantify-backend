@@ -52,7 +52,8 @@ namespace EnterpriseGradeInventoryAPI.GraphQL.Queries
                   w.Address,
                   w.Manager,
                   w.Region,
-                  w.Status
+                  w.Status,
+                  w.ContactEmail
               })
               .FirstOrDefaultAsync();
 
@@ -72,9 +73,9 @@ namespace EnterpriseGradeInventoryAPI.GraphQL.Queries
               Status = warehouse.Status,
               TotalProducts = totalProducts,
               AvailableSectors = availableSectors,
-              CapacityUtilization = capacityUtilization
+              CapacityUtilization = capacityUtilization,
+              ContactEmail = warehouse.ContactEmail
           };
       }
-
   }
 }
