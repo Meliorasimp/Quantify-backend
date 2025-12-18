@@ -102,6 +102,7 @@ builder.Services
     .AddTypeExtension<StorageLocationQuery>()
     .AddTypeExtension<PurchaseOrderQuery>()
     .AddTypeExtension<AuditLogQuery>()
+    .AddTypeExtension<StockMovementQuery>()
     .AddMutationType<EnterpriseGradeInventoryAPI.GraphQL.Mutation>()
     .AddTypeExtension<AuditLogMutation>()
     .AddTypeExtension<LoginMutation>()
@@ -110,7 +111,8 @@ builder.Services
     .AddTypeExtension<StorageLocationMutation>()
     .AddTypeExtension<PurchaseOrderMutation>()
     .AddTypeExtension<UserMutation>()
-    .AddAuthorization();
+    .AddAuthorization()
+    .ModifyRequestOptions(opt => opt.IncludeExceptionDetails = builder.Environment.IsDevelopment());
     
 var app = builder.Build();
 

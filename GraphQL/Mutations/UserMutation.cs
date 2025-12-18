@@ -2,13 +2,15 @@ using EnterpriseGradeInventoryAPI.Data;
 using EnterpriseGradeInventoryAPI.Models;
 using Microsoft.AspNetCore.Identity;
 using HotChocolate;
+using HotChocolate.Authorization;
 
 namespace EnterpriseGradeInventoryAPI.GraphQL.Mutations
 {
   [ExtendObjectType(typeof(Mutation))]
   public class UserMutation
   {
-    // Register a new user 
+    // Register a new user
+    [AllowAnonymous]
     public async Task<UserPayload> registerUser([Service] ApplicationDbContext context, string firstname, string lastname, string email, string password)
     {
       try

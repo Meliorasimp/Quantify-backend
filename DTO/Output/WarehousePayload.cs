@@ -19,6 +19,16 @@ namespace EnterpriseGradeInventoryAPI.DTO.Output
     public int TotalProducts { get; set; }
     public int AvailableSectors { get; set; }
     public int CapacityUtilization { get; set; }
-    
+    public string ContactEmail { get; set; } = string.Empty;
+  }
+
+  public class RecentStockMovementPayload
+  {
+    public int Id { get; set; }
+    public string ProductName { get; set; } = string.Empty;
+    public string Type { get; set; } = string.Empty;
+    public int Quantity { get; set; }
+    public string User { get; set; } = string.Empty;
+    public DateTimeOffset Timestamp { get; set; }
   }
 }

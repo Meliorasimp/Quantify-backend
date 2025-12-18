@@ -3,6 +3,7 @@ using EnterpriseGradeInventoryAPI.Models;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using HotChocolate;
+using HotChocolate.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using static EnterpriseGradeInventoryAPI.GraphQL.Mutations.UserMutation;
@@ -14,6 +15,7 @@ namespace EnterpriseGradeInventoryAPI.GraphQL.Mutations
   [ExtendObjectType(typeof(Mutation))]
   public class LoginMutation
   {
+    [GraphQLName("loginUser")]
     [AllowAnonymous]
     public async Task<LoginPayload> LoginUser(
       [Service] ApplicationDbContext context, 

@@ -12,7 +12,6 @@ namespace EnterpriseGradeInventoryAPI.GraphQL.Queries
   [ExtendObjectType(typeof(Query))]
   public class StorageLocationQuery
   {
-
     public async Task<List<StorageLocation>> GetAllStorageLocations([Service] ApplicationDbContext context)
     {
       try
