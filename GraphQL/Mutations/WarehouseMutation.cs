@@ -8,6 +8,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using EnterpriseGradeInventoryAPI.DTO.Input;
 using EnterpriseGradeInventoryAPI.DTO.Output;
+using Microsoft.EntityFrameworkCore;
 
 namespace EnterpriseGradeInventoryAPI.GraphQL.Mutations
 {
@@ -15,7 +16,7 @@ namespace EnterpriseGradeInventoryAPI.GraphQL.Mutations
   public class WarehouseMutation
   {
     
-    public async Task<WarehousePayload> addWarehouse(
+    public async Task<WarehousePayload> AddWarehouse(
         [Service] ApplicationDbContext context, 
         List<AddWarehouseInput> input,
         ClaimsPrincipal user
@@ -112,6 +113,58 @@ namespace EnterpriseGradeInventoryAPI.GraphQL.Mutations
         Region = warehouse.Region,
         Status = warehouse.Status
       };
+    }
+
+    public async Task<DeletedWarehousePayload> DeleteWarehouse(
+      [Service] ApplicationDbContext context, 
+      [Service] AuditLogService auditService,
+      ClaimsPrincipal user,
+      int id
+    )
+    {
+      if (user == null)
+        throw new GraphQLException(new Error("User must be authenticated", "UNAUTHORIZED"));
+
+      int userId = int.Parse(user.FindFirst(ClaimTypes.NameIdentifier)?.Value 
+        ?? throw new GraphQLException(new Error("User ID not found in token", "INVALID_TOKEN")));
+
+      var warehouse = await context.Warehouses.FirstOrDefaultAsync(w => w.Id == id)
+        ?? throw new GraphQLException(new Error("Warehouse not found", "WAREHOUSE_NOT_FOUND"));
+
+      string warehouseName = warehouse.WarehouseName;
+
+      try
+      {
+        // Delete inventory items first (they reference storage locations)
+        var inventoryItems = await context.Inventories
+          .Where(i => i.StorageLocation != null && i.StorageLocation.WarehouseId == id)
+          .ExecuteDeleteAsync();
+
+        if(inventoryItems > 0)
+          await auditService.CreateAuditLog("Delete", userId, "Inventory", id, null, null, $"Inventory items for Warehouse ID {id}");
+
+        // Delete storage locations second (they reference warehouse)
+        var storageLocation = await context.StorageLocations
+          .Where(sl => sl.WarehouseId == id)
+          .ExecuteDeleteAsync();
+
+        if(storageLocation > 0)
+          await auditService.CreateAuditLog("Delete", userId, "StorageLocation", id, null, null, $"Storage locations for Warehouse ID {id}");
+
+        // Delete warehouse last
+        await context.Warehouses.Where(w => w.Id == id).ExecuteDeleteAsync();
+        await auditService.CreateAuditLog("Delete", userId, "Warehouse", id, null, null, warehouseName);
+
+        return new DeletedWarehousePayload
+        {
+          WarehouseId = id,
+          WarehouseName = warehouseName
+        };
+      }
+      catch (Exception ex)
+      {
+        throw new GraphQLException(new Error("Failed to delete warehouse: " + ex.Message, "WAREHOUSE_DELETE_ERROR"));
+      }
     }
   }
 }

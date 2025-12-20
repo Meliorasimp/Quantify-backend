@@ -16,8 +16,6 @@ namespace EnterpriseGradeInventoryAPI.DTO.Output
     public string Type { get; set; } = string.Empty;
     [GraphQLName("warehouseName")]
     public string WarehouseName { get; set; } = string.Empty;
-    [GraphQLName("user")]
-    public string User { get; set; } = string.Empty;
     [GraphQLName("timestamp")]
     public DateTimeOffset Timestamp { get; set; }
   }

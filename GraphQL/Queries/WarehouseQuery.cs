@@ -78,31 +78,95 @@ namespace EnterpriseGradeInventoryAPI.GraphQL.Queries
               ContactEmail = warehouse.ContactEmail
           };
       }
-    
-    public async Task<DeletedWarehousePayload> DeleteWarehouse(
-        [Service] ApplicationDbContext context,
-        [Service] AuditLogService auditService,
-        ClaimsPrincipal user,
-        int id
-    )
-        {
-        if (user == null)
-          throw new GraphQLException(new Error("User must be authenticated", "UNAUTHORIZED"));
-        int userId = int.Parse(user.FindFirst(ClaimTypes.NameIdentifier)?.Value 
-          ?? throw new GraphQLException(new Error("User ID not found in token", "INVALID_TOKEN")));
-    
-            var warehouse = await context.Warehouses.FindAsync(id);
-            if (warehouse == null)
-                throw new GraphQLException(new Error("Warehouse not found", "WAREHOUSE_NOT_FOUND"));
-            context.Warehouses.Remove(warehouse);
 
-            await auditService.CreateAuditLog("Delete", userId, "Warehouse", id, null, null, warehouse.WarehouseName);
-            await context.SaveChangesAsync();
-            return new DeletedWarehousePayload
-            {
-                WarehouseId = warehouse.Id,
-                WarehouseName = warehouse.WarehouseName
-            };
+      public IQueryable<StockMovementPayload> SearchStockMovementBySearchInput(
+            [Service] ApplicationDbContext context,
+            string? searchInput
+        )
+    {
+        IQueryable<StockMovement> query = context.StockMovements
+            .AsNoTracking();
+
+        if (!string.IsNullOrWhiteSpace(searchInput))
+        {
+            var term = searchInput.Trim()
+                .Replace("[", "[[]")
+                .Replace("%", "[%]")
+                .Replace("_", "[_]");
+
+            query = query.Where(sm =>
+                EF.Functions.Like(sm.ItemSKU, $"%{term}%") ||
+                EF.Functions.Like(sm.ProductName, $"%{term}%") ||
+                EF.Functions.Like(sm.Type, $"%{term}%") ||
+                EF.Functions.Like(sm.WarehouseLocation, $"%{term}%")
+            );
         }
+
+        return query.Select(sm => new StockMovementPayload
+        {
+            Id = sm.Id,
+            ItemSku = sm.ItemSKU,
+            ProductName = sm.ProductName,
+            Quantity = sm.Quantity,
+            Type = sm.Type,
+            WarehouseName = sm.WarehouseLocation,
+            Timestamp = sm.Timestamp
+        });
+    }
+
+    public IQueryable<StockMovementPayload> SearchStockMovementByType(
+        [Service] ApplicationDbContext context,
+        string? type
+    ) {
+        IQueryable<StockMovement> query = context.StockMovements.AsNoTracking();
+
+        if (!string.IsNullOrWhiteSpace(type))
+        {
+            var term = type.Trim();
+
+            query = query.Where(sm =>
+                EF.Functions.Like(sm.Type.ToLower(), term.ToLower())
+            );
+        }
+        return query.Select(sm => new StockMovementPayload
+        {
+            Id = sm.Id,
+            ItemSku = sm.ItemSKU,
+            ProductName = sm.ProductName,
+            Quantity = sm.Quantity,
+            Type = sm.Type,
+            WarehouseName = sm.WarehouseLocation,
+            Timestamp = sm.Timestamp
+        });
+    }
+
+    public IQueryable<StockMovementPayload> SearchStockMovementByWarehouseName(
+        [Service] ApplicationDbContext context,
+        string? warehouseName
+    ) {
+        IQueryable<StockMovement> query = context.StockMovements.AsNoTracking();
+
+        if (!string.IsNullOrWhiteSpace(warehouseName))
+        {
+            var term = warehouseName.Trim()
+                .Replace("[", "[[]")
+                .Replace("%", "[%]")
+                .Replace("_", "[_]");
+
+            query = query.Where(sm =>
+                EF.Functions.Like(sm.WarehouseLocation, $"%{term}%")
+            );
+        }
+        return query.Select(sm => new StockMovementPayload
+        {
+            Id = sm.Id,
+            ItemSku = sm.ItemSKU,
+            ProductName = sm.ProductName,
+            Quantity = sm.Quantity,
+            Type = sm.Type,
+            WarehouseName = sm.WarehouseLocation,
+            Timestamp = sm.Timestamp
+        });
+    }
   }
 }

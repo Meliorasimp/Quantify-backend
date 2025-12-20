@@ -35,13 +35,11 @@ namespace EnterpriseGradeInventoryAPI.GraphQL.Mutations
           {
               foreach (var item in inventory)
               {
-                  // basic validation to ensure required fields are present
                   if (string.IsNullOrWhiteSpace(item.ItemSKU) || string.IsNullOrWhiteSpace(item.ProductName))
                       throw new GraphQLException("ItemSKU and ProductName are required");
                   if (item.QuantityInStock < 0 || item.CostPerUnit < 0)
                       throw new GraphQLException("Quantity and Cost must be non-negative");
 
-                  // check duplicates in DB + batch
                   var existingItem = await context.Inventories
                       .FirstOrDefaultAsync(i => i.ItemSKU == item.ItemSKU && i.UserId == userIdInt);
                   if (existingItem != null || addedInventories.Any(i => i.ItemSKU == item.ItemSKU))
