@@ -67,8 +67,20 @@ namespace EnterpriseGradeInventoryAPI.GraphQL.Mutations
 
         //Convert the Token into a String Format that can be sent to the Client
         var jwt = new JwtSecurityTokenHandler().WriteToken(token);
-        await auditService.CreateAuditLog("Login", user.Id, "Users", user.Id, null, null, null);
-        await context.SaveChangesAsync();
+        
+        try
+        {
+          await auditService.CreateAuditLog("Login", user.Id, "Users", user.Id, null, null, null);
+          await context.SaveChangesAsync();
+        }
+        catch (Exception auditEx)
+        {
+          // Log the audit error but don't fail the login
+          Console.WriteLine($"Audit log creation failed: {auditEx.Message}");
+          Console.WriteLine($"Inner exception: {auditEx.InnerException?.Message}");
+          // Continue with login even if audit fails
+        }
+        
         return new LoginPayload
         {
           Id = user.Id,

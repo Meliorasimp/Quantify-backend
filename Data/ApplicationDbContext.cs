@@ -55,6 +55,13 @@ namespace EnterpriseGradeInventoryAPI.Data
                 .HasForeignKey(sl => sl.UserId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            // Configure AuditLog to User relationship - Restrict to avoid cascade conflicts
+            modelBuilder.Entity<AuditLog>()
+                .HasOne(al => al.User)
+                .WithMany()
+                .HasForeignKey(al => al.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
             base.OnModelCreating(modelBuilder);
         }
     }

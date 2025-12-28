@@ -60,7 +60,7 @@ namespace EnterpriseGradeInventoryAPI.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("AuditLogs");
+                    b.ToTable("AuditLogs", (string)null);
                 });
 
             modelBuilder.Entity("EnterpriseGradeInventoryAPI.Models.Inventory", b =>
@@ -122,7 +122,7 @@ namespace EnterpriseGradeInventoryAPI.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Inventories");
+                    b.ToTable("Inventories", (string)null);
                 });
 
             modelBuilder.Entity("EnterpriseGradeInventoryAPI.Models.StockMovement", b =>
@@ -160,7 +160,7 @@ namespace EnterpriseGradeInventoryAPI.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("StockMovements");
+                    b.ToTable("StockMovements", (string)null);
                 });
 
             modelBuilder.Entity("EnterpriseGradeInventoryAPI.Models.StorageLocation", b =>
@@ -208,7 +208,7 @@ namespace EnterpriseGradeInventoryAPI.Migrations
 
                     b.HasIndex("WarehouseId");
 
-                    b.ToTable("StorageLocations");
+                    b.ToTable("StorageLocations", (string)null);
                 });
 
             modelBuilder.Entity("EnterpriseGradeInventoryAPI.Models.User", b =>
@@ -241,7 +241,7 @@ namespace EnterpriseGradeInventoryAPI.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Users");
+                    b.ToTable("Users", (string)null);
                 });
 
             modelBuilder.Entity("EnterpriseGradeInventoryAPI.Models.Warehouse", b =>
@@ -294,7 +294,7 @@ namespace EnterpriseGradeInventoryAPI.Migrations
 
                     b.HasIndex("CreatedByUserId");
 
-                    b.ToTable("Warehouses");
+                    b.ToTable("Warehouses", (string)null);
                 });
 
             modelBuilder.Entity("PurchaseOrder", b =>
@@ -343,7 +343,7 @@ namespace EnterpriseGradeInventoryAPI.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("PurchaseOrders");
+                    b.ToTable("PurchaseOrders", (string)null);
                 });
 
             modelBuilder.Entity("PurchaseOrderItems", b =>
@@ -371,7 +371,7 @@ namespace EnterpriseGradeInventoryAPI.Migrations
 
                     b.HasIndex("PurchaseOrderId");
 
-                    b.ToTable("PurchaseOrderItems");
+                    b.ToTable("PurchaseOrderItems", (string)null);
                 });
 
             modelBuilder.Entity("EnterpriseGradeInventoryAPI.Models.AuditLog", b =>
